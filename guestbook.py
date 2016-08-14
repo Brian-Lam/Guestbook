@@ -23,7 +23,47 @@ OPTIONAL PARAMETERS
 
 
 '''
-
+import sys
+import re
 from models.Visitor import Visitor
+from models.Visit import Visit
 
-a = Visitor()
+visitsList = []
+visitorsList = {}
+
+regexString = '(\S+) (\S+) (\S+) \[([^:]+):(\d+:\d+:\d+) ([^\]]+)\] \"(\S+) (.*?) (\S+)\" (\S+) (\S+) "([^"]*)" "([^"]*)"'
+
+def main(args):
+	if (len(args) < 2):
+		print "Not enough arguments! See usage"
+		return -2
+
+	fileLocation = args[1]
+	
+	importVisitsFromFile(fileLocation)
+
+# Populate visits list from access log
+def importVisitsFromFile(fileLocation):
+	compiledRegex = re.compile(regexString)
+
+	with open(fileLocation) as f:
+	    for line in f:
+	    	result = compiledRegex.match(line)
+
+	    	if result:
+		    	result = result.groups()
+		    	ip = result[0]
+		    	domain = result[11]
+		    	page = result[7]
+		    	dateTime = result[3] + " " + result[4]
+		    	userAgent = result[12]
+
+		    	_visit = Visit(ip, domain, page, dateTime, userAgent)
+		    	print(_visit)
+
+		    	visitsList.append(_visit)
+
+
+
+if __name__ == "__main__":
+    main(sys.argv)
