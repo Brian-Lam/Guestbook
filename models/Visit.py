@@ -11,4 +11,6 @@ class Visit:
 
 	def __str__(self):
 		return "{} - {} {} - {} - {} ".format(self.ipAddress, self.domain, self.pageUrl, self.dateTime, self.userAgent[:30])
-		
+	
+	def getFullUrl(self):
+		return self.domain + self.pageUrl

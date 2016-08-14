@@ -24,13 +24,18 @@ OPTIONAL PARAMETERS
 
 '''
 import sys
+import operator
 import re
+import urllib2
+import json
 from models.Visitor import Visitor
 from models.Visit import Visit
 
+# Store a list of all visits
 visitsList = []
-visitorsList = {}
-
+# Store visitors by IP
+visitorsMap = {}
+# Regex string to match 
 regexString = '(\S+) (\S+) (\S+) \[([^:]+):(\d+:\d+:\d+) ([^\]]+)\] \"(\S+) (.*?) (\S+)\" (\S+) (\S+) "([^"]*)" "([^"]*)"'
 
 def main(args):
@@ -39,8 +44,9 @@ def main(args):
 		return -2
 
 	fileLocation = args[1]
-	
 	importVisitsFromFile(fileLocation)
+	mostPopularVisitors(True)
+	# visitorPages()
 
 # Populate visits list from access log
 def importVisitsFromFile(fileLocation):
@@ -52,18 +58,51 @@ def importVisitsFromFile(fileLocation):
 
 	    	if result:
 		    	result = result.groups()
+		    	# TODO: Can we fix these magic numbers?
 		    	ip = result[0]
 		    	domain = result[11]
 		    	page = result[7]
 		    	dateTime = result[3] + " " + result[4]
 		    	userAgent = result[12]
 
-		    	_visit = Visit(ip, domain, page, dateTime, userAgent)
-		    	print(_visit)
+		    	# Update visits list
+		    	visit = Visit(ip, domain, page, dateTime, userAgent)
+		    	visitsList.append(visit)
 
-		    	visitsList.append(_visit)
+		    	# Update visitors hashmap
+		    	if not ip in visitorsMap:
+		    		visitorsMap[ip] = Visitor(ip)
+		    	visitorsMap[ip].addVisit(visit)
 
+# Prints out information about the visitors with the highest page hits. 
+# Optional parameter: track
+# If track is set to true, this script will also send out a request to freegeoip.net
+# to retreive IP address geolocation information
+def mostPopularVisitors(track = False):
+	for visitor in (sorted(visitorsMap.values(), key=operator.attrgetter('visitCount'), reverse=True)):
+		if track:
+			url = "http://freegeoip.net/json/{}".format(visitor.ipAddress)
+			apiResponse = urllib2.urlopen(url)
+			userData = json.load(apiResponse)
 
+			country = userData["country_name"].encode('ascii', 'ignore')
+			city = userData["city"].encode('ascii', 'ignore')
+			region_name = userData["region_name"].encode('ascii', 'ignore')
+			zip_code = userData["zip_code"].encode('ascii', 'ignore')
+
+			userString = "{} {}, {}  {}".format(country, city, region_name, zip_code)
+			print "{} - {} visits".format(visitor.ipAddress, visitor.visitCount)
+			print userString
+			print ""
+		else:
+			print "{} - {} visits".format(visitor.ipAddress, visitor.visitCount)
+
+# Prints out information about pages that a user has visited, and
+# the pagehits on each page.
+def visitorPages():
+	for ip, visitor in visitorsMap.iteritems():
+		print ip
+		print visitor.pageBreakdown()
 
 if __name__ == "__main__":
     main(sys.argv)
