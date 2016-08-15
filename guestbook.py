@@ -46,7 +46,11 @@ def main(args):
 	# TODO: Argument parsing
 	fileLocation = args[1]
 	importVisitsFromFile(fileLocation)
+
+	# Show the IP addresses with the most hits
 	mostPopularVisitors(True)
+
+	# List IP addresses of visitors and which pages they visited
 	# visitorPages()
 
 # Populate visits list from access log
@@ -98,19 +102,23 @@ def mostPopularVisitors(locate = False):
 		if locate:
 			url = "http://freegeoip.net/json/{}".format(visitor.ipAddress)
 			apiResponse = urllib2.urlopen(url)
-			userData = json.load(apiResponse)
-
-			country = userData["country_name"].encode('ascii', 'ignore')
-			city = userData["city"].encode('ascii', 'ignore')
-			region_name = userData["region_name"].encode('ascii', 'ignore')
-			zip_code = userData["zip_code"].encode('ascii', 'ignore')
+			country, city, region_name, zip_code = getGeoLocationData(apiResponse) or (None, None, None, None, None)
 
 			userString = "{} {}, {}  {}".format(country, city, region_name, zip_code)
-			print "{} - {} visits".format(visitor.ipAddress, visitor.visitCount)
 			print userString
-			print ""
-		else:
-			print "{} - {} visits".format(visitor.ipAddress, visitor.visitCount)
+
+		print "{} - {} visits".format(visitor.ipAddress, visitor.visitCount)
+		print ""
+
+# Given an API response from freegeoip, parse it and return 
+# geolocation data in a tuple
+def getGeoLocationData(apiResponse):
+	userData = json.load(apiResponse)
+	country = userData["country_name"].encode('ascii', 'ignore')
+	city = userData["city"].encode('ascii', 'ignore')
+	region_name = userData["region_name"].encode('ascii', 'ignore')
+	zip_code = userData["zip_code"].encode('ascii', 'ignore')
+	return country, city, region_name, zip_code
 
 # Prints out information about pages that a user has visited, and
 # the pagehits on each page.
