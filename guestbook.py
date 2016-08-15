@@ -43,9 +43,14 @@ def main(args):
 		print "Not enough arguments! See usage"
 		return -2
 
+	# TODO: Argument parsing
 	fileLocation = args[1]
 	importVisitsFromFile(fileLocation)
+
+	# Show the IP addresses with the most hits
 	mostPopularVisitors(True)
+
+	# List IP addresses of visitors and which pages they visited
 	# visitorPages()
 
 # Populate visits list from access log
@@ -54,17 +59,9 @@ def importVisitsFromFile(fileLocation):
 
 	with open(fileLocation) as f:
 	    for line in f:
-	    	result = compiledRegex.match(line)
+	    	ip, domain, page, dateTime, userAgent = getInfoFromLogLine(compiledRegex, line) or (None, None, None, None, None)
 
-	    	if result:
-		    	result = result.groups()
-		    	# TODO: Can we fix these magic numbers?
-		    	ip = result[0]
-		    	domain = result[11]
-		    	page = result[7]
-		    	dateTime = result[3] + " " + result[4]
-		    	userAgent = result[12]
-
+	    	if ip:
 		    	# Update visits list
 		    	visit = Visit(ip, domain, page, dateTime, userAgent)
 		    	visitsList.append(visit)
@@ -74,28 +71,54 @@ def importVisitsFromFile(fileLocation):
 		    		visitorsMap[ip] = Visitor(ip)
 		    	visitorsMap[ip].addVisit(visit)
 
+# Extracts specific pieces of data from a line in the 
+# access log. Returns None if no matches are found. 
+def getInfoFromLogLine(compiledRegex, line):
+	result = compiledRegex.match(line)
+
+	if result is not None:
+		result = result.groups()
+	else: 
+		return None
+
+	if result is not None:
+		# TODO: Can we fix these magic numbers?
+		ip = result[0]
+		domain = result[11]
+		page = result[7]
+		dateTime = result[3] + " " + result[4]
+		userAgent = result[12]
+
+		return ip, domain, page, dateTime, userAgent
+
+	return None
+
 # Prints out information about the visitors with the highest page hits. 
 # Optional parameter: track
-# If track is set to true, this script will also send out a request to freegeoip.net
+# If locate is set to true, this script will also send out a request to freegeoip.net
 # to retreive IP address geolocation information
-def mostPopularVisitors(track = False):
+def mostPopularVisitors(locate = False):
 	for visitor in (sorted(visitorsMap.values(), key=operator.attrgetter('visitCount'), reverse=True)):
-		if track:
+		if locate:
 			url = "http://freegeoip.net/json/{}".format(visitor.ipAddress)
 			apiResponse = urllib2.urlopen(url)
-			userData = json.load(apiResponse)
-
-			country = userData["country_name"].encode('ascii', 'ignore')
-			city = userData["city"].encode('ascii', 'ignore')
-			region_name = userData["region_name"].encode('ascii', 'ignore')
-			zip_code = userData["zip_code"].encode('ascii', 'ignore')
+			country, city, region_name, zip_code = getGeoLocationData(apiResponse) or (None, None, None, None, None)
 
 			userString = "{} {}, {}  {}".format(country, city, region_name, zip_code)
-			print "{} - {} visits".format(visitor.ipAddress, visitor.visitCount)
 			print userString
-			print ""
-		else:
-			print "{} - {} visits".format(visitor.ipAddress, visitor.visitCount)
+
+		print "{} - {} visits".format(visitor.ipAddress, visitor.visitCount)
+		print ""
+
+# Given an API response from freegeoip, parse it and return 
+# geolocation data in a tuple
+def getGeoLocationData(apiResponse):
+	userData = json.load(apiResponse)
+	country = userData["country_name"].encode('ascii', 'ignore')
+	city = userData["city"].encode('ascii', 'ignore')
+	region_name = userData["region_name"].encode('ascii', 'ignore')
+	zip_code = userData["zip_code"].encode('ascii', 'ignore')
+	return country, city, region_name, zip_code
 
 # Prints out information about pages that a user has visited, and
 # the pagehits on each page.

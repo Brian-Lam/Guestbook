@@ -22,6 +22,7 @@ Feel free to contact me if you'd like to help develop this.
  - Add argument parser
  - We should probably use a GET request library
  - I'm sure I'm missing some error handling, particularly with string encoding
+ - Breakdown by day
 
 
 License
