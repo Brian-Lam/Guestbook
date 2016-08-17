@@ -1,3 +1,9 @@
+'''
+Visitor
+
+This class represents a visitor to a web server - visitors are differentiated by IP address. Each visitor
+will have a list of Visits attached to it, as well as a map to count their number of hits on each page
+'''
 import collections
 
 class Visitor:

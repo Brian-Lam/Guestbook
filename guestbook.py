@@ -28,9 +28,16 @@ import operator
 import re
 import urllib2
 import json
+import argparse
 from models.Visitor import Visitor
 from models.Visit import Visit
 
+
+'''
+*********************************************************************
+SETUP
+*********************************************************************
+'''
 # Store a list of all visits
 visitsList = []
 # Store visitors by IP
@@ -38,20 +45,26 @@ visitorsMap = {}
 # Regex string to match 
 regexString = '(\S+) (\S+) (\S+) \[([^:]+):(\d+:\d+:\d+) ([^\]]+)\] \"(\S+) (.*?) (\S+)\" (\S+) (\S+) "([^"]*)" "([^"]*)"'
 
-def main(args):
-	if (len(args) < 2):
-		print "Not enough arguments! See usage"
-		return -2
+# Parse arguments
+parser = argparse.ArgumentParser()
+parser.add_argument("file", type=str, help="Filepath for access log")
+parser.add_argument("track", nargs="?", help="Enable tracking IP geolocation")
+parser.add_argument("-cutoff", nargs="?", type=int, default=False, help="Minimum view count cutoff when showing results")
 
+
+def main(args):
 	# TODO: Argument parsing
-	fileLocation = args[1]
+	args = parser.parse_args()
+	fileLocation = args.file
 	importVisitsFromFile(fileLocation)
 
+	enableTracking = (not args.track == None)
+
 	# Show the IP addresses with the most hits
-	mostPopularVisitors(True)
+	mostPopularVisitors(args.track, args.cutoff)
 
 	# List IP addresses of visitors and which pages they visited
-	# visitorPages()
+	#visitorPages()
 
 # Populate visits list from access log
 def importVisitsFromFile(fileLocation):
@@ -82,7 +95,6 @@ def getInfoFromLogLine(compiledRegex, line):
 		return None
 
 	if result is not None:
-		# TODO: Can we fix these magic numbers?
 		ip = result[0]
 		domain = result[11]
 		page = result[7]
@@ -95,11 +107,17 @@ def getInfoFromLogLine(compiledRegex, line):
 
 # Prints out information about the visitors with the highest page hits. 
 # Optional parameter: track
-# If locate is set to true, this script will also send out a request to freegeoip.net
+# If track is set to true, this script will also send out a request to freegeoip.net
 # to retreive IP address geolocation information
-def mostPopularVisitors(locate = False):
+def mostPopularVisitors(track = False, cutoff = None):
 	for visitor in (sorted(visitorsMap.values(), key=operator.attrgetter('visitCount'), reverse=True)):
-		if locate:
+		# Hide results that have less views than the cutoff
+		if cutoff:
+			if visitor.visitCount < cutoff:
+				continue 
+
+		# If geotracking has been enabled
+		if track:
 			url = "http://freegeoip.net/json/{}".format(visitor.ipAddress)
 			apiResponse = urllib2.urlopen(url)
 			country, city, region_name, zip_code = getGeoLocationData(apiResponse) or (None, None, None, None, None)
@@ -114,6 +132,7 @@ def mostPopularVisitors(locate = False):
 # geolocation data in a tuple
 def getGeoLocationData(apiResponse):
 	userData = json.load(apiResponse)
+	# Cleanse data and remove bad encoding
 	country = userData["country_name"].encode('ascii', 'ignore')
 	city = userData["city"].encode('ascii', 'ignore')
 	region_name = userData["region_name"].encode('ascii', 'ignore')
@@ -122,7 +141,12 @@ def getGeoLocationData(apiResponse):
 
 # Prints out information about pages that a user has visited, and
 # the pagehits on each page.
-def visitorPages():
+def visitorPages(targetIp = None):
+	# Only print page breakdown for target visitor
+	if targetIp and targetIp in visitorsMap.keys():
+		print visitorsMap[targetIp].pageBreakdown
+		return
+	# If no target IP, print out page breakdown for all visitors
 	for ip, visitor in visitorsMap.iteritems():
 		print ip
 		print visitor.pageBreakdown()

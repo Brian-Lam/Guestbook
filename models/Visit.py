@@ -1,3 +1,10 @@
+'''
+Visit 
+
+This class represents a unique visit to a site, as logged in the access logs. Visitors will store a 
+list of these visits. 
+'''
+
 class Visit:
 	ipAddress = ""
 	pageUrl = ""
