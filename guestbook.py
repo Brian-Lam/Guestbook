@@ -154,10 +154,11 @@ def visitorPages(targetIp = None):
 	if targetIp and targetIp in visitorsMap.keys():
 		print visitorsMap[targetIp].pageBreakdown()
 		return
-	# If no target IP, print out page breakdown for all visitors
-	for ip, visitor in visitorsMap.iteritems():
-		print ip
-		print visitor.pageBreakdown()
+	else:
+		# If no target IP, print out page breakdown for all visitors
+		for ip, visitor in visitorsMap.iteritems():
+			print ip
+			print visitor.pageBreakdown()
 
 # Run if started from command line
 if __name__ == "__main__":
