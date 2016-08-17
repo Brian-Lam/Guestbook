@@ -20,8 +20,6 @@ OPTIONAL PARAMETERS
 - request [substring]			Returns all matches with this substring in the request
 - count							Returns the most common IP addresses for visitors
 - track							Also displays geolocation information about IP address
-
-
 '''
 import sys
 import operator
@@ -45,26 +43,32 @@ visitorsMap = {}
 # Regex string to match 
 regexString = '(\S+) (\S+) (\S+) \[([^:]+):(\d+:\d+:\d+) ([^\]]+)\] \"(\S+) (.*?) (\S+)\" (\S+) (\S+) "([^"]*)" "([^"]*)"'
 
-# Parse arguments
+# Add command line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("file", type=str, help="Filepath for access log")
-parser.add_argument("track", nargs="?", help="Enable tracking IP geolocation")
+parser.add_argument("filePath", type=str, help="Filepath for access log")
+parser.add_argument("-track", action="store_true", help="Enable tracking IP geolocation")
+parser.add_argument("-popular", action="store_true", help="Show most popular visitors by IP")
+parser.add_argument("-breakdown", action="store_true", help="Show domain + page breakdown for each IP address")
+parser.add_argument("-recon", type=str, help="Shows browser information about a specific user")
+parser.add_argument("-target", help="Only show results for this IP address")
 parser.add_argument("-cutoff", nargs="?", type=int, default=False, help="Minimum view count cutoff when showing results")
-
+parser.add_argument("-from", nargs="?", type=str, help="Show visits from this date")
+parser.add_argument("-to", nargs="?", type=str, help="Show visits until this date")
 
 def main(args):
-	# TODO: Argument parsing
+	# Parse arguments
 	args = parser.parse_args()
-	fileLocation = args.file
+
+	fileLocation = args.filePath
 	importVisitsFromFile(fileLocation)
 
-	enableTracking = (not args.track == None)
-
 	# Show the IP addresses with the most hits
-	mostPopularVisitors(args.track, args.cutoff)
+	if (args.popular):
+		mostPopularVisitors(args.track, args.cutoff)
 
 	# List IP addresses of visitors and which pages they visited
-	#visitorPages()
+	if (args.breakdown):
+		visitorPages(args.target)
 
 # Populate visits list from access log
 def importVisitsFromFile(fileLocation):
@@ -82,6 +86,7 @@ def importVisitsFromFile(fileLocation):
 		    	# Update visitors hashmap
 		    	if not ip in visitorsMap:
 		    		visitorsMap[ip] = Visitor(ip)
+
 		    	visitorsMap[ip].addVisit(visit)
 
 # Extracts specific pieces of data from a line in the 
@@ -126,7 +131,10 @@ def mostPopularVisitors(track = False, cutoff = None):
 			print userString
 
 		print "{} - {} visits".format(visitor.ipAddress, visitor.visitCount)
-		print ""
+
+		# Onle line break if we're also displaying geolocation data
+		if track:
+			print ""
 
 # Given an API response from freegeoip, parse it and return 
 # geolocation data in a tuple
@@ -144,12 +152,13 @@ def getGeoLocationData(apiResponse):
 def visitorPages(targetIp = None):
 	# Only print page breakdown for target visitor
 	if targetIp and targetIp in visitorsMap.keys():
-		print visitorsMap[targetIp].pageBreakdown
+		print visitorsMap[targetIp].pageBreakdown()
 		return
 	# If no target IP, print out page breakdown for all visitors
 	for ip, visitor in visitorsMap.iteritems():
 		print ip
 		print visitor.pageBreakdown()
 
+# Run if started from command line
 if __name__ == "__main__":
     main(sys.argv)

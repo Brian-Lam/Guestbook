@@ -7,19 +7,19 @@ will have a list of Visits attached to it, as well as a map to count their numbe
 import collections
 
 class Visitor:
-	ipAddress = ""
-	location = ""
-	visits =  []
-	pages = collections.defaultdict(int)
-	visitCount = 0
 
 	def __init__(self, ipAddress=""):
+		self.visits =  []
 		self.ipAddress = ipAddress
+		self.pages = collections.defaultdict(int)
+		self.visitCount = 0
+		self.userAgents = set()
 		
 	def addVisit(self, visit):
 		self.visits.append(visit)
 		self.visitCount += 1
 		self.pages[visit.getFullUrl()] += 1
+		self.userAgents.add(visit.userAgent)
 
 	def pageBreakdown(self):
 		result = ""
