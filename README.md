@@ -28,28 +28,47 @@ optional arguments:
 ~~~~ 
 python guestbook.py access_logs.txt -popular 
 ~~~~
-Show the most popular visitors by IP address.
+* Show the most popular visitors by IP address.
 
 ~~~~ 
 python guestbook.py access_logs.txt -popular -track
 ~~~~
-Show the most popular visitors by IP address, and find Geolocation data for each IP address.
+* Show the most popular visitors by IP address
+* Find Geolocation data for each IP address.
 
 
 ~~~~ 
 python guestbook.py access_logs.txt -popular -track -cutoff=10
 ~~~~
-Show the most popular visitors by IP address with viewcount equal to or greater than the cutoff, and find Geolocation data for each IP address. 
+* Show the most popular visitors by IP address with viewcount equal to or greater than the cutoff
+* Find Geolocation data for each IP address. 
 
 ~~~~ 
 python guestbook.py access_logs.txt -breakdown
 ~~~~
-Shows the URL access breakdown for every visitor, as listed in the access log.
+* Show the URL access summary for every visitor. (Not recommended)
 
 ~~~~ 
 python guestbook.py access_logs.txt -breakdown -target=a.b.c.d
 ~~~~
-Shows the URL access breakdown for the target IP, as listed in the access log.
+* Show the URL access summary for the specified IP address. 
+
+~~~~ 
+python guestbook.py access_logs.txt -times=a.b.c.d
+~~~~
+* Show timestamped URL access logs for the specified IP address. 
+
+~~~~ 
+python guestbook.py access_logs.txt -times=a.b.c.d -track
+~~~~
+* Show timestamped URL access logs for the specified IP address. 
+* Find Geolocation data for this IP address as well. 
+
+~~~~ 
+python guestbook.py access_logs.txt -agents=a.b.c.d
+~~~~
+* Show known user agents for the specified IP address. 
+
 
 ### Status
 Beta - it works, but this isn't as polished up as it should be. 

@@ -14,10 +14,10 @@ USAGE
 ******************************************************************
 guestbook.py [-h] [-agents AGENTS] [-times TIMES] [-cutoff CUTOFF]
                 [-target TARGET] [-popular] [-track] [-breakdown]
-                filePath
+                filepath
 
 positional arguments:
-  filePath        Filepath for access log
+  filepath        filepath for access log
 
 optional arguments:
   -h, --help      show this help message and exit
@@ -56,7 +56,7 @@ regexString = '(\S+) (\S+) (\S+) \[([^:]+):(\d+:\d+:\d+) ([^\]]+)\] \"(\S+) (.*?
 
 # Add command line arguments
 parser = argparse.ArgumentParser()
-parser.add_argument("filePath", type=str, help="Filepath for access log")
+parser.add_argument("filepath", type=str, help="Filepath for access log")
 parser.add_argument("-agents", type=str, help="Show user agents for a given ip")
 parser.add_argument("-times", type=str, help="Show page visits with timestamps for a particular IP address")
 parser.add_argument("-cutoff", type=int, help="Minimum view count cutoff when showing results")
@@ -69,7 +69,7 @@ def main(args):
 	# Parse arguments
 	args = parser.parse_args()
 
-	fileLocation = args.filePath
+	fileLocation = args.filepath
 	importVisitsFromFile(fileLocation)
 
 	# Show known user agents for an IP address
