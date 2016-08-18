@@ -22,3 +22,6 @@ class Visit:
 	
 	def getFullUrl(self):
 		return self.fullUrl.replace("//", "/")
+
+	def getFullUrlAndTime(self):
+		return "{}: {}".format(self.dateTime, self.getFullUrl())

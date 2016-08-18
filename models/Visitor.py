@@ -34,3 +34,10 @@ class Visitor:
 			result += agent
 			result += "\n"
 		return result
+
+	def timesAndUrls(self):
+		result = ""
+		for visit in self.visits:
+			result += visit.getFullUrlAndTime()
+			result += "\n"
+		return result

@@ -50,6 +50,7 @@ parser.add_argument("-popular", action="store_true", help="Show IP addresses of 
 parser.add_argument("-track", action="store_true", help="Enable tracking IP geolocation. Results will be shown with tracking data.")
 parser.add_argument("-agents", type=str, help="Show user agents for a given ip")
 parser.add_argument("-breakdown", action="store_true", help="Show page visit breakdown for each IP address")
+parser.add_argument("-times", type=str, help="Show page visit with time information for a particular IP address")
 parser.add_argument("-target", help="Only show results for this IP address")
 parser.add_argument("-cutoff", nargs="?", type=int, default=False, help="Minimum view count cutoff when showing results")
 
@@ -62,7 +63,11 @@ def main(args):
 
 	# Show known user agents for an IP address
 	if (args.agents):
-		showAgents(args.agents)
+		showAgents(args.agents, args)
+
+	# Show access times for an IP address
+	if (args.times):
+		showTimes(args.times, args)
 
 	# Show the IP addresses with the most hits
 	if (args.popular):
@@ -70,26 +75,91 @@ def main(args):
 
 	# List IP addresses of visitors and which pages they visited
 	if (args.breakdown):
-		visitorPages(args.target)
+		visitorPages(args.target, args)
 
-# Populate visits list from access log
-def importVisitsFromFile(fileLocation):
-	compiledRegex = re.compile(regexString)
 
-	with open(fileLocation) as f:
-	    for line in f:
-	    	ip, domain, page, dateTime, userAgent = getInfoFromLogLine(compiledRegex, line) or (None, None, None, None, None)
 
-	    	if ip:
-		    	# Update visits list
-		    	visit = Visit(ip, domain, page, dateTime, userAgent)
-		    	visitsList.append(visit)
+# Prints out information about the visitors with the highest page hits. 
+# Optional parameter: track
+# If track is set to true, this script will also send out a request to freegeoip.net
+# to retreive IP address geolocation information
+def mostPopularVisitors(track = False, cutoff = None):
+	for visitor in (sorted(visitorsMap.values(), key=operator.attrgetter('visitCount'), reverse=True)):
+		# Hide results that have less views than the cutoff
+		if cutoff:
+			if visitor.visitCount < cutoff:
+				continue 
 
-		    	# Update visitors hashmap
-		    	if not ip in visitorsMap:
-		    		visitorsMap[ip] = Visitor(ip)
+		# If geotracking has been enabled
+		if track:
+			# getGeoLocationDataString(visitor)
+			print getGeoLocationDataString(visitor)
 
-		    	visitorsMap[ip].addVisit(visit)
+		print "{} - {} visits".format(visitor.ipAddress, visitor.visitCount)
+
+		# Onle line break if we're also displaying geolocation data
+		if track:
+			print ""
+# Prints out information about pages that a user has visited, and
+# the pagehits on each page.
+def visitorPages(targetIp = None, args=None):
+	# Only print page breakdown for target visitor
+	if targetIp:
+		if targetIp in visitorsMap.keys():
+			print visitorsMap[targetIp].pageBreakdown()
+			return
+		else:
+			print "Could not find any records for this IP in the access log file"
+	else:
+		# If no target IP, print out page breakdown for all visitors
+		for ip, visitor in visitorsMap.iteritems():
+			print ip
+			print visitor.pageBreakdown()
+
+# Prints out information about the known user agents for a 
+# given IP address.
+def showAgents(targetIp, args=None):
+	if targetIp and targetIp in visitorsMap.keys():
+		print visitorsMap[targetIp].userAgentsString()
+	else:
+		print "Could not find any records for this IP in the access log file"
+
+# Prints out information about access times for a 
+# given IP address.
+def showTimes(targetIp, args=None):
+	if targetIp and targetIp in visitorsMap.keys():
+		visitor = visitorsMap[targetIp]
+		print "\nShowing access times for {}\n".format(targetIp)
+		if args and args.track:
+			print getGeoLocationDataString(visitor)
+
+		print visitor.timesAndUrls()
+	else:
+		print "Could not find any records for this IP in the access log file"
+
+'''
+*********************************************************************
+Helper functions
+*********************************************************************
+'''
+
+def getGeoLocationDataString(visitor):
+	url = "http://freegeoip.net/json/{}".format(visitor.ipAddress)
+	apiResponse = urllib2.urlopen(url)
+	country, city, region_name, zip_code = parseGeoLocationData(apiResponse) or (None, None, None, None, None)
+
+	return "{} {}, {}  {}".format(country, city, region_name, zip_code)
+
+# Given an API response from freegeoip, parse it and return 
+# geolocation data in a tuple
+def parseGeoLocationData(apiResponse):
+	userData = json.load(apiResponse)
+	# Cleanse data and remove bad encoding
+	country = userData["country_name"].encode('ascii', 'ignore')
+	city = userData["city"].encode('ascii', 'ignore')
+	region_name = userData["region_name"].encode('ascii', 'ignore')
+	zip_code = userData["zip_code"].encode('ascii', 'ignore')
+	return country, city, region_name, zip_code
 
 # Extracts specific pieces of data from a line in the 
 # access log. Returns None if no matches are found. 
@@ -112,67 +182,24 @@ def getInfoFromLogLine(compiledRegex, line):
 
 	return None
 
-# Prints out information about the visitors with the highest page hits. 
-# Optional parameter: track
-# If track is set to true, this script will also send out a request to freegeoip.net
-# to retreive IP address geolocation information
-def mostPopularVisitors(track = False, cutoff = None):
-	for visitor in (sorted(visitorsMap.values(), key=operator.attrgetter('visitCount'), reverse=True)):
-		# Hide results that have less views than the cutoff
-		if cutoff:
-			if visitor.visitCount < cutoff:
-				continue 
+# Populate visits list from access log
+def importVisitsFromFile(fileLocation):
+	compiledRegex = re.compile(regexString)
 
-		# If geotracking has been enabled
-		if track:
-			url = "http://freegeoip.net/json/{}".format(visitor.ipAddress)
-			apiResponse = urllib2.urlopen(url)
-			country, city, region_name, zip_code = getGeoLocationData(apiResponse) or (None, None, None, None, None)
+	with open(fileLocation) as f:
+	    for line in f:
+	    	ip, domain, page, dateTime, userAgent = getInfoFromLogLine(compiledRegex, line) or (None, None, None, None, None)
 
-			userString = "{} {}, {}  {}".format(country, city, region_name, zip_code)
-			print userString
+	    	if ip:
+		    	# Update visits list
+		    	visit = Visit(ip, domain, page, dateTime, userAgent)
+		    	visitsList.append(visit)
 
-		print "{} - {} visits".format(visitor.ipAddress, visitor.visitCount)
+		    	# Update visitors hashmap
+		    	if not ip in visitorsMap:
+		    		visitorsMap[ip] = Visitor(ip)
 
-		# Onle line break if we're also displaying geolocation data
-		if track:
-			print ""
-
-# Given an API response from freegeoip, parse it and return 
-# geolocation data in a tuple
-def getGeoLocationData(apiResponse):
-	userData = json.load(apiResponse)
-	# Cleanse data and remove bad encoding
-	country = userData["country_name"].encode('ascii', 'ignore')
-	city = userData["city"].encode('ascii', 'ignore')
-	region_name = userData["region_name"].encode('ascii', 'ignore')
-	zip_code = userData["zip_code"].encode('ascii', 'ignore')
-	return country, city, region_name, zip_code
-
-# Prints out information about pages that a user has visited, and
-# the pagehits on each page.
-def visitorPages(targetIp = None):
-	# Only print page breakdown for target visitor
-	if targetIp:
-		if targetIp in visitorsMap.keys():
-			print visitorsMap[targetIp].pageBreakdown()
-			return
-		else:
-			print "Could not find any records for this IP in the access log file"
-	else:
-		# If no target IP, print out page breakdown for all visitors
-		for ip, visitor in visitorsMap.iteritems():
-			print ip
-			print visitor.pageBreakdown()
-
-# Prints out information about the known user agents for a 
-# given IP address.
-def showAgents(targetIp):
-	if targetIp and targetIp in visitorsMap.keys():
-		print visitorsMap[targetIp].userAgentsString()
-	else:
-		print "Could not find any records for this IP in the access log file"
-
+		    	visitorsMap[ip].addVisit(visit)
 
 # Run if started from command line
 if __name__ == "__main__":
