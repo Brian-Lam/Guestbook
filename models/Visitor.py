@@ -27,3 +27,10 @@ class Visitor:
 			result += ("    {}: {} visits").format(key, value)
 			result += "\n"
 		return result
+	
+	def userAgentsString(self):
+		result = ""
+		for agent in self.userAgents:
+			result += agent
+			result += "\n"
+		return result

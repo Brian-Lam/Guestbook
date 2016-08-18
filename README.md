@@ -5,8 +5,7 @@ Guestbook is an Apache access log anaylzer. It can retrieve information about a 
 ### Usage
 ~~~~
 guestbook.py [-h] [-track] [-popular] [-breakdown] [-recon RECON]
-                    [-target TARGET] [-cutoff [CUTOFF]] [-from [FROM]]
-                    [-to [TO]]
+                    [-target TARGET] [-cutoff [CUTOFF]]
                     filePath
 ~~~~
 

@@ -46,14 +46,12 @@ regexString = '(\S+) (\S+) (\S+) \[([^:]+):(\d+:\d+:\d+) ([^\]]+)\] \"(\S+) (.*?
 # Add command line arguments
 parser = argparse.ArgumentParser()
 parser.add_argument("filePath", type=str, help="Filepath for access log")
-parser.add_argument("-track", action="store_true", help="Enable tracking IP geolocation")
-parser.add_argument("-popular", action="store_true", help="Show most popular visitors by IP")
-parser.add_argument("-breakdown", action="store_true", help="Show domain + page breakdown for each IP address")
-parser.add_argument("-recon", type=str, help="Shows browser information about a specific user")
+parser.add_argument("-popular", action="store_true", help="Show IP addresses of most popular visits")
+parser.add_argument("-track", action="store_true", help="Enable tracking IP geolocation. Results will be shown with tracking data.")
+parser.add_argument("-agents", type=str, help="Show user agents for a given ip")
+parser.add_argument("-breakdown", action="store_true", help="Show page visit breakdown for each IP address")
 parser.add_argument("-target", help="Only show results for this IP address")
 parser.add_argument("-cutoff", nargs="?", type=int, default=False, help="Minimum view count cutoff when showing results")
-parser.add_argument("-from", nargs="?", type=str, help="Show visits from this date")
-parser.add_argument("-to", nargs="?", type=str, help="Show visits until this date")
 
 def main(args):
 	# Parse arguments
@@ -61,6 +59,10 @@ def main(args):
 
 	fileLocation = args.filePath
 	importVisitsFromFile(fileLocation)
+
+	# Show known user agents for an IP address
+	if (args.agents):
+		showAgents(args.agents)
 
 	# Show the IP addresses with the most hits
 	if (args.popular):
@@ -151,14 +153,26 @@ def getGeoLocationData(apiResponse):
 # the pagehits on each page.
 def visitorPages(targetIp = None):
 	# Only print page breakdown for target visitor
-	if targetIp and targetIp in visitorsMap.keys():
-		print visitorsMap[targetIp].pageBreakdown()
-		return
+	if targetIp:
+		if targetIp in visitorsMap.keys():
+			print visitorsMap[targetIp].pageBreakdown()
+			return
+		else:
+			print "Could not find any records for this IP in the access log file"
 	else:
 		# If no target IP, print out page breakdown for all visitors
 		for ip, visitor in visitorsMap.iteritems():
 			print ip
 			print visitor.pageBreakdown()
+
+# Prints out information about the known user agents for a 
+# given IP address.
+def showAgents(targetIp):
+	if targetIp and targetIp in visitorsMap.keys():
+		print visitorsMap[targetIp].userAgentsString()
+	else:
+		print "Could not find any records for this IP in the access log file"
+
 
 # Run if started from command line
 if __name__ == "__main__":
