@@ -1,12 +1,12 @@
 '''
 Guestbook Parser
 
-Guestbook analyzes an Apache log file and returns information about who 
+Guestbook analyzes an Apache log file and returns information about who
 visited a site, or a particular part of a site. For example, it can be used
 to retrieve information about visitors' geographic location, or the most frequent
-visitors by IP address. 
+visitors by IP address.
 
-It uses the freegeoip.net location API. 
+It uses the freegeoip.net location API.
 
 
 ******************************************************************
@@ -52,7 +52,7 @@ SETUP
 visitsList = []
 # Store visitors by IP
 visitorsMap = {}
-# Regex string to match 
+# Regex string to match
 regexString = '(\S+) (\S+) (\S+) \[([^:]+):(\d+:\d+:\d+) ([^\]]+)\] \"(\S+) (.*?) (\S+)\" (\S+) (\S+) "([^"]*)" "([^"]*)"'
 
 # Add command line arguments
@@ -89,16 +89,16 @@ def main(args):
 	if (args.breakdown):
 		visitorPages(args.target, args)
 
-# Prints out information about the visitors with the highest page hits. 
+# Prints out information about the visitors with the highest page hits.
 # Optional parameter: track
 # If track is set to true, this script will also send out a request to freegeoip.net
 # to retreive IP address geolocation information
-def mostPopularVisitors(track = False, cutoff = None):
+def mostPopularVisitors(track=False, cutoff=None):
 	for visitor in (sorted(visitorsMap.values(), key=operator.attrgetter('visitCount'), reverse=True)):
 		# Hide results that have less views than the cutoff
 		if cutoff:
 			if visitor.visitCount < cutoff:
-				continue 
+				continue
 
 		# If geotracking has been enabled
 		if track:
@@ -113,7 +113,7 @@ def mostPopularVisitors(track = False, cutoff = None):
 
 # Prints out information about pages that a user has visited, and
 # the pagehits on each page.
-def visitorPages(targetIp = None, args=None):
+def visitorPages(targetIp=None, args=None):
 	# Only print page breakdown for target visitor
 	if targetIp:
 		if targetIp in visitorsMap.keys():
@@ -127,7 +127,7 @@ def visitorPages(targetIp = None, args=None):
 			print ip
 			print visitor.pageBreakdown()
 
-# Prints out information about the known user agents for a 
+# Prints out information about the known user agents for a
 # given IP address.
 def showAgents(targetIp, args=None):
 	if targetIp and targetIp in visitorsMap.keys():
@@ -173,14 +173,14 @@ def parseGeoLocationData(apiResponse):
 	zip_code = userData["zip_code"].encode('ascii', 'ignore')
 	return country, city, region_name, zip_code
 
-# Extracts specific pieces of data from a line in the 
-# access log. Returns None if no matches are found. 
+# Extracts specific pieces of data from a line in the
+# access log. Returns None if no matches are found.
 def getInfoFromLogLine(compiledRegex, line):
 	result = compiledRegex.match(line)
 
 	if result is not None:
 		result = result.groups()
-	else: 
+	else:
 		return None
 
 	if result is not None:
@@ -199,20 +199,20 @@ def importVisitsFromFile(fileLocation):
 	compiledRegex = re.compile(regexString)
 
 	with open(fileLocation) as f:
-	    for line in f:
-	    	ip, domain, page, dateTime, userAgent = getInfoFromLogLine(compiledRegex, line) or (None, None, None, None, None)
+		for line in f:
+			ip, domain, page, dateTime, userAgent = getInfoFromLogLine(compiledRegex, line) or (None, None, None, None, None)
 
-	    	if ip:
-		    	# Update visits list
-		    	visit = Visit(ip, domain, page, dateTime, userAgent)
-		    	visitsList.append(visit)
+			if ip:
+				# Update visits list
+				visit = Visit(ip, domain, page, dateTime, userAgent)
+				visitsList.append(visit)
 
-		    	# Update visitors hashmap
-		    	if not ip in visitorsMap:
-		    		visitorsMap[ip] = Visitor(ip)
+				# Update visitors hashmap
+				if ip not in visitorsMap:
+					visitorsMap[ip] = Visitor(ip)
 
-		    	visitorsMap[ip].addVisit(visit)
+				visitorsMap[ip].addVisit(visit)
 
 # Run if started from command line
 if __name__ == "__main__":
-    main(sys.argv)
+	main(sys.argv)
