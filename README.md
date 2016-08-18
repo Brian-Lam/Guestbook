@@ -4,25 +4,24 @@ Guestbook is an Apache access log anaylzer. It can retrieve information about a 
 
 ### Usage
 ~~~~
-guestbook.py filePath [-h] [-agents AGENTS] [-times TIMES] 
-				[-cutoff [CUTOFF]] [-popular] [-track] 
-				[-breakdown] [-target TARGET]
-                
+guestbook.py [-h] [-agents AGENTS] [-times TIMES] [-cutoff CUTOFF]
+                [-target TARGET] [-popular] [-track] [-breakdown]
+                filePath
 
 positional arguments:
-  filePath          Filepath for access log
+  filePath        Filepath for access log
 
 optional arguments:
-  -h, --help        show this help message and exit
-  -agents AGENTS    Show user agents for a given ip
-  -times TIMES      Show page visits with timestamps for a particular IP
-                    address
-  -cutoff [CUTOFF]  Minimum view count cutoff when showing results
-  -popular          Show IP addresses of most popular visits
-  -track            Enable tracking IP geolocation. Results will be shown with
-                    tracking data.
-  -breakdown        Show page visit breakdown for each IP address
-  -target TARGET    Only show results for this IP address
+  -h, --help      show this help message and exit
+  -agents AGENTS  Show user agents for a given ip
+  -times TIMES    Show page visits with timestamps for a particular IP address
+  -cutoff CUTOFF  Minimum view count cutoff when showing results
+  -target TARGET  Only show results for specified IP address
+  -popular        Show IP addresses of most popular visits
+  -track          Enable tracking IP geolocation. Results will be shown with
+                  tracking data.
+  -breakdown      Show page visit breakdown for each IP address
+
 ~~~~
 
 ### Usage Examples

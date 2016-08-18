@@ -12,24 +12,23 @@ It uses the freegeoip.net location API.
 ******************************************************************
 USAGE
 ******************************************************************
-guestbook.py [-h] [-agents AGENTS] [-times TIMES] [-cutoff [CUTOFF]]
-                [-popular] [-track] [-breakdown] [-target TARGET]
+guestbook.py [-h] [-agents AGENTS] [-times TIMES] [-cutoff CUTOFF]
+                [-target TARGET] [-popular] [-track] [-breakdown]
                 filePath
 
 positional arguments:
-  filePath          Filepath for access log
+  filePath        Filepath for access log
 
 optional arguments:
-  -h, --help        show this help message and exit
-  -agents AGENTS    Show user agents for a given ip
-  -times TIMES      Show page visits with timestamps for a particular IP
-                    address
-  -cutoff [CUTOFF]  Minimum view count cutoff when showing results
-  -popular          Show IP addresses of most popular visits
-  -track            Enable tracking IP geolocation. Results will be shown with
-                    tracking data.
-  -breakdown        Show page visit breakdown for each IP address
-  -target TARGET    Only show results for this IP address
+  -h, --help      show this help message and exit
+  -agents AGENTS  Show user agents for a given ip
+  -times TIMES    Show page visits with timestamps for a particular IP address
+  -cutoff CUTOFF  Minimum view count cutoff when showing results
+  -target TARGET  Only show results for specified IP address
+  -popular        Show IP addresses of most popular visits
+  -track          Enable tracking IP geolocation. Results will be shown with
+                  tracking data.
+  -breakdown      Show page visit breakdown for each IP address
 '''
 
 import sys
@@ -60,11 +59,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument("filePath", type=str, help="Filepath for access log")
 parser.add_argument("-agents", type=str, help="Show user agents for a given ip")
 parser.add_argument("-times", type=str, help="Show page visits with timestamps for a particular IP address")
-parser.add_argument("-cutoff", nargs="?", type=int, default=False, help="Minimum view count cutoff when showing results")
+parser.add_argument("-cutoff", type=int, help="Minimum view count cutoff when showing results")
+parser.add_argument("-target", type=str, help="Only show results for specified IP address")
 parser.add_argument("-popular", action="store_true", help="Show IP addresses of most popular visits")
 parser.add_argument("-track", action="store_true", help="Enable tracking IP geolocation. Results will be shown with tracking data.")
 parser.add_argument("-breakdown", action="store_true", help="Show page visit breakdown for each IP address")
-parser.add_argument("-target", help="Only show results for this IP address")
 
 def main(args):
 	# Parse arguments
