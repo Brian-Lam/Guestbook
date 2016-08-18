@@ -7,20 +7,31 @@ to retrieve information about visitors' geographic location, or the most frequen
 visitors by IP address. 
 
 It uses the freegeoip.net location API. 
-	
+
 
 ******************************************************************
 USAGE
 ******************************************************************
-python ApacheLogParser.py [Access log location] [Optional Parameters]
+guestbook.py [-h] [-agents AGENTS] [-times TIMES] [-cutoff [CUTOFF]]
+                [-popular] [-track] [-breakdown] [-target TARGET]
+                filePath
 
-******************************************************************
-OPTIONAL PARAMETERS
-******************************************************************
-- request [substring]			Returns all matches with this substring in the request
-- count							Returns the most common IP addresses for visitors
-- track							Also displays geolocation information about IP address
+positional arguments:
+  filePath          Filepath for access log
+
+optional arguments:
+  -h, --help        show this help message and exit
+  -agents AGENTS    Show user agents for a given ip
+  -times TIMES      Show page visits with timestamps for a particular IP
+                    address
+  -cutoff [CUTOFF]  Minimum view count cutoff when showing results
+  -popular          Show IP addresses of most popular visits
+  -track            Enable tracking IP geolocation. Results will be shown with
+                    tracking data.
+  -breakdown        Show page visit breakdown for each IP address
+  -target TARGET    Only show results for this IP address
 '''
+
 import sys
 import operator
 import re
@@ -36,6 +47,7 @@ from models.Visit import Visit
 SETUP
 *********************************************************************
 '''
+
 # Store a list of all visits
 visitsList = []
 # Store visitors by IP
@@ -46,13 +58,13 @@ regexString = '(\S+) (\S+) (\S+) \[([^:]+):(\d+:\d+:\d+) ([^\]]+)\] \"(\S+) (.*?
 # Add command line arguments
 parser = argparse.ArgumentParser()
 parser.add_argument("filePath", type=str, help="Filepath for access log")
+parser.add_argument("-agents", type=str, help="Show user agents for a given ip")
+parser.add_argument("-times", type=str, help="Show page visits with timestamps for a particular IP address")
+parser.add_argument("-cutoff", nargs="?", type=int, default=False, help="Minimum view count cutoff when showing results")
 parser.add_argument("-popular", action="store_true", help="Show IP addresses of most popular visits")
 parser.add_argument("-track", action="store_true", help="Enable tracking IP geolocation. Results will be shown with tracking data.")
-parser.add_argument("-agents", type=str, help="Show user agents for a given ip")
 parser.add_argument("-breakdown", action="store_true", help="Show page visit breakdown for each IP address")
-parser.add_argument("-times", type=str, help="Show page visit with time information for a particular IP address")
 parser.add_argument("-target", help="Only show results for this IP address")
-parser.add_argument("-cutoff", nargs="?", type=int, default=False, help="Minimum view count cutoff when showing results")
 
 def main(args):
 	# Parse arguments
@@ -77,8 +89,6 @@ def main(args):
 	if (args.breakdown):
 		visitorPages(args.target, args)
 
-
-
 # Prints out information about the visitors with the highest page hits. 
 # Optional parameter: track
 # If track is set to true, this script will also send out a request to freegeoip.net
@@ -100,6 +110,7 @@ def mostPopularVisitors(track = False, cutoff = None):
 		# Onle line break if we're also displaying geolocation data
 		if track:
 			print ""
+
 # Prints out information about pages that a user has visited, and
 # the pagehits on each page.
 def visitorPages(targetIp = None, args=None):
@@ -131,7 +142,8 @@ def showTimes(targetIp, args=None):
 		visitor = visitorsMap[targetIp]
 		print "\nShowing access times for {}\n".format(targetIp)
 		if args and args.track:
-			print getGeoLocationDataString(visitor)
+			geoData = getGeoLocationDataString(visitor)
+			print "{}\n".format(geoData)
 
 		print visitor.timesAndUrls()
 	else:
